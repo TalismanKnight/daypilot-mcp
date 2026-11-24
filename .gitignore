@@ -1,0 +1,7 @@
+.env
+.venv/
+__pycache__/
+*.pyc
+daypilot.db
+out/
+.pytest_cache/
