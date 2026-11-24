@@ -1,6 +1,7 @@
 """ElevenLabs text-to-speech. Returns an honest result when no key is set or the call fails."""
 import json
 import os
+import urllib.error
 import urllib.request
 from datetime import datetime
 from pathlib import Path
@@ -22,6 +23,9 @@ def synthesize(text: str, out_dir: str = "out") -> dict:
     try:
         with urllib.request.urlopen(req, timeout=40) as resp:
             audio = resp.read()
+    except urllib.error.HTTPError as exc:
+        detail = exc.read().decode("utf-8", "ignore")[:300]
+        return {"audio_path": None, "note": f"ElevenLabs refused the request (HTTP {exc.code}): {detail}"}
     except Exception as exc:
         return {"audio_path": None, "note": f"ElevenLabs request failed ({type(exc).__name__}). The text is still returned."}
     folder = Path(out_dir)
