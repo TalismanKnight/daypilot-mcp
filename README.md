@@ -1,118 +1,281 @@
 # DayPilot MCP
 
-**Team The Latverians** · wHACKiest 2026 · Track 1: Make MCP Matter
+**Team The Latverians | wHACKiest 2026 | Track 1: Make MCP Matter**
 
-A voice-first MCP server that plans your day. It finds real free time, fits tasks into it, works out
-when to leave using travel time, and hands you a ride link at the right moment. **It never changes
-anything until you confirm**, and every change can be undone. Designed first for people who can't rely
-on a screen (blind and low-vision users), usable by anyone.
+### Your day. Your pace. Your decisions.
 
-Any MCP client (Claude Desktop, Claude Code, Cursor, VS Code, MCP Inspector) can plug in.
+DayPilot is an accessibility-first, MCP-powered intelligent daily planning assistant designed primarily for people with disabilities, especially blind and low-vision users, while remaining usable by everyone.
 
-## Why it is different
+It connects everyday scheduling, task management, travel planning and voice assistance into a single, user-controlled experience.
 
-| | |
+**Nothing is committed without explicit user confirmation, and confirmed planning changes can be undone.**
+
+## The Problem
+
+Managing everyday activities often requires switching between multiple applications, including calendars, task managers, navigation services and transportation platforms.
+
+For people with disabilities, fragmented and visually dependent interfaces can introduce additional accessibility barriers.
+
+DayPilot aims to simplify this experience through accessible interaction, personalized planning and controlled MCP integrations.
+
+## Key Features
+
+- Intelligent daily scheduling.
+- Automatic free-time detection.
+- Deadline-based task prioritization.
+- Voice commands and spoken responses.
+- ElevenLabs-powered daily briefings.
+- Personalized departure-time calculations.
+- Travel assistance and Uber ride handoff.
+- Appointment management.
+- Explicit confirmation before committing planning changes.
+- Undo functionality and audit logs.
+- Standalone accessible web dashboard.
+- 20 MCP tools.
+
+## Accessibility First
+
+| Accessibility need | Prototype support |
 |---|---|
-| **Propose, then confirm** | Every write tool returns a proposal. Only `confirm(proposal_id)` changes anything. |
-| **Undo + audit log** | Each confirmed change is logged with its inverse. `undo_last_change()` reverses it. |
-| **Server-side time math** | Durations, countdowns and free minutes are computed in code (IST) and returned as numbers. |
-| **Spoken output** | Every tool returns a `spoken_summary` in plain sentences, ready for text-to-speech. |
-| **Honest failure** | If a task does not fit, it says by how much and what lower-priority work could be dropped. |
-| **Validated inputs** | Bad dates, durations and addresses return a clear message, not a guess. |
-| **Accessibility profile** | `voice_first` adds wayfinding time (+10 min) for finding stops, crossings and entrances. |
+| Blind and low-vision | Voice interaction, spoken summaries and additional wayfinding time |
+| Hearing impairment | Text-based interaction and visual information |
+| Mobility impairment | Personalized travel buffers |
+| ADHD and attention difficulties | Focus mode and task prioritization |
+| Low vision | High-contrast interface and adjustable text size |
+| Motor difficulties | Voice commands and reduced-input interactions |
 
-## Quick start
+These are initial accessibility features. Further testing with people with disabilities is planned.
 
-```bash
-git clone <this repo> && cd daypilot-mcp
-python3 -m venv .venv && source .venv/bin/activate
-pip install -r requirements.txt
-python -m daypilot.seed          # loads one realistic day in IST
-python demo_run.py               # runs the whole demo flow in the terminal
-pytest -q                        # 12 tests
+## Why DayPilot Is Different
+
+| Feature | Description |
+|---|---|
+| Propose, then confirm | Planning changes require explicit approval before being committed. |
+| Undo and audit log | Confirmed changes are recorded and reversible. |
+| Deterministic time calculations | Scheduling, countdowns and durations are calculated in Python rather than guessed by an AI model. |
+| Spoken summaries | MCP tools return human-readable responses suitable for speech output. |
+| Honest failure | Reports scheduling conflicts instead of inventing available time. |
+| Accessibility profiles | Allows interaction and planning preferences to be adapted to individual needs. |
+| Standalone interface | Operates without requiring Claude or another external AI assistant. |
+| MCP interoperability | Compatible with external MCP clients. |
+
+## Technology Stack
+
+| Technology | Purpose |
+|---|---|
+| Python | Backend and scheduling logic |
+| FastMCP | Model Context Protocol server |
+| SQLite | Local storage |
+| HTML, CSS, JavaScript | Accessible web interface |
+| ElevenLabs | AI-powered briefing audio |
+| Browser Speech Recognition | Voice input where supported |
+| Google Routes API | Travel-time estimation |
+| ntfy | Notification integration |
+| Uber Deep Links | Ride-service handoff |
+| GitHub | Version control |
+
+## Quick Start
+
+### Windows
+
+Clone the repository:
+
+`git clone https://github.com/TalismanKnight/daypilot-mcp.git`
+
+`cd daypilot-mcp`
+
+Install dependencies:
+
+`pip install -r requirements.txt`
+
+Load demonstration data:
+
+`python -m daypilot.seed`
+
+Launch the standalone application:
+
+`python web_app.py`
+
+Open the following address in your browser:
+
+http://127.0.0.1:8765
+
+No Claude connection is required.
+
+### ElevenLabs Configuration
+
+Create a local `.env` file using `.env.example` as a reference.
+
+Set `ELEVENLABS_API_KEY` to your own API key.
+
+Never commit your `.env` file or private API credentials to GitHub.
+
+Without ElevenLabs configuration, text-based briefings remain available.
+
+## MCP Inspector
+
+DayPilot can also be tested independently using MCP Inspector.
+
+Run:
+
+`npx @modelcontextprotocol/inspector python -m daypilot.server`
+
+Connect the server and select any available MCP tool.
+
+Node.js is required for MCP Inspector.
+
+## Terminal Demonstration
+
+Run:
+
+`python demo_run.py`
+
+Run automated tests:
+
+`pytest -q`
+
+For repeatable demonstrations, the clock can be pinned using the `DAYPILOT_NOW` environment variable.
+
+## Example User Journey
+
+1. The user asks DayPilot to plan their day.
+2. DayPilot retrieves appointments and deadlines.
+3. The scheduling engine calculates available time.
+4. Tasks are prioritized and fitted into available slots.
+5. Travel time and accessibility buffers are considered.
+6. DayPilot presents a proposed schedule.
+7. The user confirms or rejects the proposal.
+8. The confirmed plan is saved and recorded.
+9. The user can receive a spoken briefing or undo the change.
+
+## MCP Tools (20)
+
+### Read Tools
+
+- `get_day_overview`
+- `get_free_slots`
+- `get_priority_list`
+- `find_slot_for`
+- `has_event`
+- `get_travel_time`
+- `plan_departure`
+- `prepare_ride`
+- `speak_morning_briefing`
+- `get_audit_log`
+
+### Proposal Tools
+
+- `propose_plan`
+- `add_task`
+- `add_event`
+- `mark_done`
+- `set_home_location`
+- `set_profile`
+- `import_calendar`
+- `set_departure_reminder`
+
+### Commit and Recovery
+
+- `confirm`
+- `undo_last_change`
+
+## System Architecture
+
+```
+User
+  |
+  | Voice / Text / Accessible Controls
+  v
+DayPilot Web Interface
+  |
+  v
+Local MCP Client
+  |
+  | MCP over stdio
+  v
+DayPilot FastMCP Server
+  |
+  +-- Scheduling Engine
+  +-- Accessibility Preferences
+  +-- Proposal and Confirmation Engine
+  +-- Undo and Audit Log
+  |
+  +-- SQLite Database
+  +-- ElevenLabs Voice API
+  +-- Google Routes API
+  +-- ntfy Notifications
+  +-- Uber Ride Handoff
 ```
 
-Try it visually: `mcp dev daypilot/server.py` opens MCP Inspector.
+External MCP clients can also connect directly to the DayPilot server.
 
-### Connect Claude Desktop
+## Prototype Status
 
-Add to `claude_desktop_config.json` (use your absolute paths):
+### Implemented and demonstrated
 
-```json
-{
-  "mcpServers": {
-    "daypilot": {
-      "command": "/ABS/PATH/daypilot-mcp/.venv/bin/python",
-      "args": ["-m", "daypilot.server"],
-      "env": {
-        "PYTHONPATH": "/ABS/PATH/daypilot-mcp",
-        "MAPS_MODE": "mock",
-        "ELEVENLABS_API_KEY": "",
-        "NTFY_TOPIC": ""
-      }
-    }
-  }
-}
-```
+- Core scheduling engine.
+- Task prioritization.
+- Free-time calculations.
+- Proposal, confirmation and undo.
+- MCP server connectivity.
+- Discovery of all 20 MCP tools.
+- Standalone web application.
+- ElevenLabs briefing integration.
+- Accessibility controls and preferences.
 
-### Demo prompt
+### Requires Further Testing
 
-> I have a dentist appointment at 4, a report due tomorrow noon, and I want to hit the gym. Plan my day,
-> and tell me what to drop if it does not fit.
+- Browser voice recognition across different devices.
+- Live Google Routes API requests.
+- Phone notification delivery.
+- Ride deep links on mobile devices.
+- Screen-reader compatibility and accessibility testing with actual users.
 
-The assistant chains `get_day_overview` → `get_free_slots` → `get_priority_list` → `propose_plan`,
-reads the draft aloud, and waits. Then: *"When do I need to leave for the dentist?"* → `plan_departure`.
-*"Confirm."* → `confirm`. *"Undo that."* → `undo_last_change`.
+### Current Limitations
 
-For repeatable rehearsals pin the clock: `DAYPILOT_NOW="2026-11-24 09:00"`.
+- The web prototype uses predefined conversational commands rather than a general-purpose LLM.
+- Travel estimates cannot guarantee safe or step-free routes.
+- DayPilot hands users off to ride applications and never books rides or charges users.
+- Notifications are reminders, not guaranteed phone alarms.
+- Google Calendar write-back is not currently implemented. Calendar import uses `.ics` files.
+- Accessibility preferences are early prototype features, not fully validated assistive technology.
 
-## Tools (20)
+## Future Roadmap
 
-**Read (run freely):** `get_day_overview`, `get_free_slots`, `get_priority_list`, `find_slot_for`,
-`has_event`, `get_travel_time`, `plan_departure`, `prepare_ride`, `speak_morning_briefing`, `get_audit_log`
+- Natural-language AI assistant with MCP tool calling.
+- Google Calendar and email integration.
+- Dynamic schedule replanning.
+- Regional-language voice assistance.
+- Verified accessible transit and step-free navigation information.
+- Haptic notifications.
+- Braille-ready schedule exports.
+- Energy-aware scheduling.
+- Mobile application.
+- AWS cloud deployment.
+- User testing with disability communities.
 
-**Propose (write nothing):** `propose_plan`, `add_task`, `add_event`, `mark_done`, `set_home_location`,
-`set_profile`, `import_calendar` (.ics), `set_departure_reminder`
+## Vision
 
-**Commit:** `confirm`, `undo_last_change`
+DayPilot aims to make everyday planning more independent, accessible and manageable.
 
-## Architecture
+One MCP engine. Multiple accessibility needs. The user remains in control.
 
-```
-MCP client (Claude Desktop / Inspector / Cursor)
-        │  MCP over stdio
-        ▼
-DayPilot server (FastMCP) ── engine: free slots · priorities · slot finder · two-pass leave-by
-        │                       changes: propose → confirm → undo · audit log
-        ├── SQLite (events, tasks, proposals, audit log, settings)
-        ├── Google Routes API  (live travel time; mock fallback)
-        ├── ElevenLabs         (spoken briefing audio)
-        ├── ntfy               (phone reminder with ride link)
-        └── Uber deep link     (user taps; DayPilot never books or charges)
-```
+## Hackathon
 
-## Status: what is tested and what is not
+**Event:** wHACKiest 2026
 
-- **Tested (12 automated tests + stdio check):** free-slot maths, leave-by, priorities, propose/confirm/undo,
-  double-confirm rejection, honest does-not-fit, input validation, `.ics` import, voice_first profile.
-- **Written but not yet tested live:** Google Routes API calls, ElevenLabs audio, ntfy push, and the Uber
-  link format. Each has a built-in fallback (mock travel times, text-only briefing, error message) so
-  the demo still works if one fails. Test the ride link on a real phone before presenting.
-- **Not in this prototype:** Google Calendar write-back (use `.ics` import), `replan_day`,
-  Ola/Rapido prefilled links (the tool says so instead of guessing a format).
+**Track:** Track 1 — Make MCP Matter
 
-## Honest limits
+**Team:** The Latverians
 
-- DayPilot sends reminders, not literal phone alarms.
-- It hands off to ride apps; it never books or charges.
-- Travel estimates do not know whether crossings or pavements are safe, and the tool says so.
+**College:** R.R. Institute of Technology, Bengaluru
 
-## Roadmap
+**Sponsor Technology:** ElevenLabs
 
-One engine, multiple accessibility profiles: deaf and hard-of-hearing (visual and haptic alerts, text
-confirmations), wheelchair users (step-free routing), ADHD and cognitive support (one step at a time),
-braille-ready daily plan export, Google Calendar write-back, `replan_day`, AWS hosting.
+## Team Members
 
-## Team
+- Adity Garwad — Team Lead
+- Pragya D Khanapur
+- Mohammed Ehsan
 
-The Latverians: Aditya Garwad (lead), Pragya D Khanapur, Mohammed Ehsan, RRIT Bengaluru.
+**Built by The Latverians — Accessibility First.**
