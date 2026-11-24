@@ -6,10 +6,10 @@ from mcp import ClientSession, StdioServerParameters
 from mcp.client.stdio import stdio_client
 
 ROOT = Path(__file__).resolve().parent
-ALLOWED = {'get_day_overview','get_free_slots','get_priority_list','propose_plan','confirm','undo_last_change','speak_morning_briefing','set_profile','add_task','add_event','get_audit_log','plan_departure','prepare_ride'}
+ALLOWED = {'get_day_overview','get_free_slots','get_priority_list','propose_plan','confirm','undo_last_change','speak_morning_briefing','set_profile','add_task','add_event','get_audit_log','plan_departure','prepare_ride','prepare_payment','confirm_payment_handoff','cancel_payment'}
 URL = 'http://127.0.0.1:8765'
 async def call(name, args):
-    params = StdioServerParameters(command=sys.executable, args=['-m','daypilot.server'], cwd=str(ROOT))
+    params = StdioServerParameters(command=sys.executable, args=['-m','daypilot.payment_server'], cwd=str(ROOT))
     async with stdio_client(params) as (read, write):
         async with ClientSession(read, write) as session:
             await session.initialize()
