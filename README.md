@@ -115,4 +115,4 @@ braille-ready daily plan export, Google Calendar write-back, `replan_day`, AWS h
 
 ## Team
 
-The Latverians: Aditya Garwad (lead), Pragya D Khanapur, Mohammed Ehsan, RIT Bengaluru.
+The Latverians: Aditya Garwad (lead), Pragya D Khanapur, Mohammed Ehsan, RRIT Bengaluru.
