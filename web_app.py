@@ -1,5 +1,5 @@
-"""Local-only DayPilot web client. Run from the project root."""
-import asyncio, base64, json, sys, threading, webbrowser
+"""Local-only AEGIS web client. Run from the project root."""
+import asyncio, base64, json, os, sys, threading, webbrowser
 from pathlib import Path
 from http.server import BaseHTTPRequestHandler, HTTPServer
 from mcp import ClientSession, StdioServerParameters
@@ -9,7 +9,7 @@ ROOT = Path(__file__).resolve().parent
 ALLOWED = {'get_day_overview','get_free_slots','get_priority_list','propose_plan','confirm','undo_last_change','speak_morning_briefing','set_profile','add_task','add_event','get_audit_log','plan_departure','prepare_ride','prepare_payment','confirm_payment_handoff','cancel_payment'}
 URL = 'http://127.0.0.1:8765'
 async def call(name, args):
-    params = StdioServerParameters(command=sys.executable, args=['-m','daypilot.payment_server'], cwd=str(ROOT))
+    params = StdioServerParameters(command=sys.executable, args=["-m","daypilot.payment_server"], cwd=str(ROOT), env=dict(os.environ))
     async with stdio_client(params) as (read, write):
         async with ClientSession(read, write) as session:
             await session.initialize()
@@ -30,7 +30,10 @@ class Handler(BaseHTTPRequestHandler):
     def send_data(self, status, data, mime):
         self.send_response(status); self.send_header('Content-Type',mime); self.send_header('Content-Length',str(len(data))); self.send_header('Cache-Control','no-store'); self.end_headers(); self.wfile.write(data)
     def do_GET(self):
-        if self.path=='/': self.send_data(200,(ROOT/'daypilot_ui.html').read_bytes(),'text/html; charset=utf-8')
+        if self.path=='/':
+            html=(ROOT/'daypilot_ui.html').read_text(encoding='utf-8')
+            if os.environ.get('AEGIS_SAFE_DEMO') == '1': html=html.replace('data-demo="off"','data-demo="on"')
+            self.send_data(200,html.encode('utf-8'),'text/html; charset=utf-8')
         else: self.send_error(404)
     def do_POST(self):
         if self.path!='/tool' or self.headers.get('Origin')!=URL or self.headers.get('Host')!='127.0.0.1:8765' or self.headers.get_content_type()!='application/json':
@@ -40,12 +43,13 @@ class Handler(BaseHTTPRequestHandler):
             if not 0<n<=16000: raise ValueError('Invalid request size')
             body=json.loads(self.rfile.read(n)); name=body['tool']; args=body.get('args',{})
             if name not in ALLOWED or not isinstance(args,dict): raise ValueError('Unsupported tool')
+            if name == 'prepare_payment' and os.environ.get('AEGIS_SAFE_DEMO') == '1': args['demo'] = True
             data=asyncio.run(call(name,args)); self.send_data(200,json.dumps(data).encode(),'application/json')
         except Exception as e:
             self.send_data(400,json.dumps({'error':str(e)}).encode(),'application/json')
 if __name__=='__main__':
     server=HTTPServer(('127.0.0.1',8765),Handler)
-    print('DayPilot:',URL,flush=True)
+    print('AEGIS MCP:',URL,flush=True)
     threading.Timer(0.7,lambda:webbrowser.open(URL)).start()
     try: server.serve_forever()
     except KeyboardInterrupt: pass

@@ -1,5 +1,5 @@
 """Payment handoff extension. No payment execution, PIN collection or bank verification."""
-import re, time, secrets
+import re, time, secrets, os
 from decimal import Decimal, InvalidOperation
 from urllib.parse import urlencode
 from contextlib import closing
@@ -17,6 +17,7 @@ def _db():
 @safe
 def prepare_payment(recipient: str, upi_id: str, amount: str, demo: bool = True) -> dict:
     """Prepare a payment review only. Never pays. Demo mode cannot produce a live link."""
+    demo = demo or os.environ.get("AEGIS_SAFE_DEMO") == "1"
     recipient = recipient.strip()
     upi_id = upi_id.strip()
     if not recipient or len(recipient)>80 or any(ord(x)<32 for x in recipient):
@@ -33,7 +34,7 @@ def prepare_payment(recipient: str, upi_id: str, amount: str, demo: bool = True)
     with closing(_db()) as c, c:
         c.execute('DELETE FROM payment_drafts WHERE status=? AND created<?', ('draft', time.time()-600))
         c.execute('INSERT INTO payment_drafts VALUES (?,?,?,?,?,?,?)',(pid,recipient,upi_id,amount,int(demo),time.time(),'draft'))
-    spoken = f'{"Demo only. " if demo else ""}Payment request: {amount} rupees to {recipient}. UPI ID: {" ".join(upi_id.replace("@", "@"))}. Recipient is not verified. Review the details. No money has moved. Confirm payment to prepare the handoff, or cancel payment.'
+    spoken = f'{"Demo only. " if demo else ""}Payment request: {amount} rupees to {recipient}. UPI ID: {upi_id.replace("@", " at ").replace(".", " dot ")}. Recipient is not verified. Review the details. No money has moved. Never share your PIN or OTP. Confirm payment to prepare the handoff, or cancel payment.'
     return {'ok':True,'payment_id':pid,'spoken_summary':spoken,'recipient':recipient,'upi_id':upi_id,'amount':amount,'demo':demo}
 
 
@@ -49,7 +50,7 @@ def confirm_payment_handoff(payment_id: str) -> dict:
         c.execute('UPDATE payment_drafts SET status=? WHERE id=?',('handoff_prepared',payment_id))
         demo=bool(r['demo'])
         link=None if demo else 'upi://pay?'+urlencode({'pa':r['vpa'],'pn':r['name'],'am':r['amount'],'cu':'INR'})
-    return {'ok':True,'demo':demo,'link':link,'spoken_summary': 'Demo confirmed. No payment app will open and no money has moved.' if demo else 'Handoff prepared. No money has moved. Open your UPI app using the link, verify the actual recipient and amount there, then authorize only if correct. DayPilot cannot verify payment status.'}
+    return {'ok':True,'demo':demo,'link':link,'spoken_summary': 'Demo confirmed. No payment app will open and no money has moved.' if demo else 'Handoff prepared. No money has moved. Open your UPI app using the link, verify the actual recipient and amount there, then authorize only if correct. AEGIS cannot verify payment status.'}
 
 
 @mcp.tool()

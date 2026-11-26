@@ -19,7 +19,7 @@ try:  # optional .env support
 except ImportError:
     pass
 
-mcp = FastMCP("DayPilot")
+mcp = FastMCP("AEGIS MCP")
 
 
 def safe(fn):
@@ -85,7 +85,8 @@ def _overview(conn, d) -> dict:
         parts.append(f"For {when} you have no fixed events.")
     for dep in departures:
         parts.append(f"Leave by {say_time(parse_dt(dep['leave_by']))} for {dep['title']}, "
-                     f"{say_minutes(dep['travel_minutes'])} of travel plus {say_minutes(dep['buffer_minutes'])} buffer.")
+                     f"{say_minutes(dep['travel_minutes'])} of travel plus {say_minutes(dep['buffer_minutes'])} buffer."
+                     + (" This is a simulated travel estimate." if dep["source"].startswith("mock") else ""))
     if due_soon:
         parts.append("Due soon: " + ", ".join(f"{t['title']} in {say_hours(t['due_in_hours'])}" for t in due_soon) + ".")
     parts.append(f"You have {say_minutes(total_free)} of free time.")
@@ -197,7 +198,8 @@ def get_travel_time(origin: str, destination: str, depart_at: str | None = None,
     res = engine.maps.get_travel(origin.strip(), destination.strip(), when, mode)
     return {**res, "mode": mode, "spoken_summary":
             f"By {mode} it takes about {say_minutes(res['duration_min'])}, {res['distance_km']} kilometres. "
-            f"I cannot check whether crossings or pavements on the way are safe."}
+            f"I cannot check whether crossings or pavements on the way are safe. "
+            + ("This is a simulated travel estimate." if res["source"].startswith("mock") else "")}
 
 
 @mcp.tool()
@@ -213,17 +215,19 @@ def plan_departure(event_id: int, buffer_min: int | None = None,
     dep = engine.public(dep)
     dep["spoken_summary"] = (f"Leave by {say_time(parse_dt(dep['leave_by']))} for {row['title']} at "
                              f"{say_time(parse_dt(dep['arrive_by']))}. Travel is {say_minutes(dep['travel_minutes'])} "
-                             f"by {dep['mode']}, plus {say_minutes(dep['buffer_minutes'])} buffer.{extra}")
+                             f"by {dep['mode']}, plus {say_minutes(dep['buffer_minutes'])} buffer.{extra} "
+                             + ("This is a simulated estimate. " if dep["source"].startswith("mock") else "")
+                             + "Route accessibility and safety are not verified.")
     return dep
 
 
 @mcp.tool()
 @safe
 def prepare_ride(event_id: int, provider: Literal["uber", "ola", "rapido"] = "uber", date: str | None = None) -> dict:
-    """Build a one-tap ride link for an event; DayPilot never books or charges."""
+    """Build a one-tap ride link for an event; AEGIS never books or charges."""
     conn = connect()
     row, start = _resolve_occurrence(conn, event_id, date)
-    dep = engine.departure(conn, start, row["location"])
+    dep = engine.departure(conn, start, row["location"], mode="drive")
     leave = say_time(dep["_leave_dt"])
     if provider == "uber":
         link = ("https://m.uber.com/ul/?action=setPickup&pickup=my_location&dropoff[formatted_address]="
@@ -234,8 +238,9 @@ def prepare_ride(event_id: int, provider: Literal["uber", "ola", "rapido"] = "ub
         note = (f"Open the {provider.title()} app and enter this destination: {row['location']}. "
                 "A prefilled link for this provider is not set up yet.")
     return {"provider": provider, "link": link, "destination": row["location"], "leave_by": iso(dep["_leave_dt"]),
-            "note": note, "spoken_summary": f"Your {provider.title()} ride to {row['title']} is ready for "
-            f"{leave}. {note}"}
+            "note": note, "source": dep["source"], "spoken_summary": f"Suggested car departure for {row['title']}: "
+            f"{leave}. No ride has been booked. {note} "
+            + ("This is a simulated estimate." if dep["source"].startswith("mock") else "")}
 
 
 @mcp.tool()
